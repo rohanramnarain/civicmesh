@@ -1,10 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import {
+  getFeaturedDataset,
   publishRun,
   runCatalogIngest,
+  runForecast311,
   searchDatasets,
   type DatasetSearchResult,
+  type FeaturedDataset,
 } from "./api";
 import {
   EMBEDDING_MODELS,
@@ -31,6 +34,10 @@ function App() {
   const [ingestStatus, setIngestStatus] = React.useState<string>("Catalog not ingested yet");
   const [loadingIngest, setLoadingIngest] = React.useState(false);
   const [loadingSearch, setLoadingSearch] = React.useState(false);
+  const [featured, setFeatured] = React.useState<FeaturedDataset | null>(null);
+  const [loadingFeatured, setLoadingFeatured] = React.useState(false);
+  const [forecast, setForecast] = React.useState<ForecastResult | null>(null);
+  const [loadingForecast, setLoadingForecast] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -57,6 +64,33 @@ function App() {
       setError(err instanceof Error ? err.message : "Ingest request failed");
     } finally {
       setLoadingIngest(false);
+    }
+  }
+
+  async function handleLoadFeaturedClick() {
+    setError(null);
+    setLoadingFeatured(true);
+    try {
+      const dataset = await getFeaturedDataset();
+      setFeatured(dataset);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Featured dataset request failed");
+    } finally {
+      setLoadingFeatured(false);
+    }
+  }
+
+  async function handleForecastClick() {
+    if (!featured) return;
+    setError(null);
+    setLoadingForecast(true);
+    try {
+      const result = await runForecast311(featured.rows);
+      setForecast(result);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Forecast request failed");
+    } finally {
+      setLoadingForecast(false);
     }
   }
 
@@ -228,6 +262,119 @@ function App() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="panel">
+        <h2>Featured Dataset: 311 Complaints by ZIP (2020-2025)</h2>
+        <p>
+          Pre-loaded sample of NYC 311 heat/hot-water and street-condition complaints
+          grouped by ZIP code and year. Safe for offline demos.
+        </p>
+        <div className="controls">
+          <button type="button" onClick={handleLoadFeaturedClick} disabled={loadingFeatured}>
+            {loadingFeatured ? "Loading..." : "Load Featured Dataset"}
+          </button>
+          {featured ? (
+            <span className="status">
+              {featured.title} — {featured.rows.length} rows
+            </span>
+          ) : null}
+        </div>
+
+        {featured ? (
+          <>
+            <p className="meta">
+              <strong>{featured.agency_name}</strong> | {featured.category} |{" "}
+              <a href={featured.source_url} target="_blank" rel="noreferrer">
+                Open source dataset
+              </a>
+            </p>
+            <table className="featured-table">
+              <thead>
+                <tr>
+                  <th>ZIP</th>
+                  <th>Complaint Type</th>
+                  {featured.years.map((year) => (
+                    <th key={year}>{year}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from(
+                  new Map(
+                    featured.rows.map((r) => [
+                      `${r.zipcode}::${r.complaint_type}`,
+                      { zipcode: r.zipcode, complaint_type: r.complaint_type },
+                    ])
+                  ).values()
+                ).map((key) => {
+                  const byYear = new Map(
+                    featured.rows
+                      .filter(
+                        (r) =>
+                          r.zipcode === key.zipcode &&
+                          r.complaint_type === key.complaint_type
+                      )
+                      .map((r) => [r.year, r.complaint_count])
+                  );
+                  return (
+                    <tr key={`${key.zipcode}::${key.complaint_type}`}>
+                      <td>{key.zipcode}</td>
+                      <td>{key.complaint_type}</td>
+                      {featured.years.map((year) => (
+                        <td key={year}>{byYear.get(year) ?? 0}</td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <div className="controls">
+              <button
+                type="button"
+                onClick={handleForecastClick}
+                disabled={loadingForecast || !featured}
+              >
+                {loadingForecast ? "Predicting..." : "Predict 2026 from this data"}
+              </button>
+            </div>
+
+            {forecast ? (
+              <>
+                <h3>2026 Predictions</h3>
+                <p className="meta">
+                  Best model by RMSE:{" "}
+                  <strong>{forecast.model_comparison[0]?.model_name}</strong> | MAE:{" "}
+                  {forecast.model_comparison[0]?.mae} | RMSE:{" "}
+                  {forecast.model_comparison[0]?.rmse}
+                </p>
+                <table className="featured-table">
+                  <thead>
+                    <tr>
+                      <th>ZIP</th>
+                      <th>Complaint Type</th>
+                      <th>2025 Actual</th>
+                      <th>2026 Predicted</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {forecast.predictions[
+                      forecast.model_comparison[0]?.model_name
+                    ]?.slice(0, 10).map((row) => (
+                      <tr key={`${row.zipcode}::${row.complaint_type}`}>
+                        <td>{row.zipcode}</td>
+                        <td>{row.complaint_type}</td>
+                        <td>{row.source_count}</td>
+                        <td>{row.predicted_count}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </>
+            ) : null}
+          </>
+        ) : null}
       </section>
 
       <section className="grid">

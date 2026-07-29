@@ -8,6 +8,13 @@ import {
   signInWithPopup,
   signOut,
 } from "firebase/auth";
+import {
+  type Firestore,
+  getFirestore,
+  doc,
+  getDoc,
+} from "firebase/firestore";
+import type { FeaturedDataset } from "./api";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -21,6 +28,7 @@ const firebaseConfig = {
 const firebaseEnabled = Boolean(firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId);
 const app = firebaseEnabled ? initializeApp(firebaseConfig) : null;
 const auth: Auth | null = app ? getAuth(app) : null;
+const db: Firestore | null = app ? getFirestore(app) : null;
 const provider = auth ? new GoogleAuthProvider() : null;
 
 export function listenAuth(callback: (user: User | null) => void): () => void {
@@ -59,4 +67,17 @@ export async function getBearerTokenOrDevToken(): Promise<string> {
   }
 
   return user.getIdToken();
+}
+
+export async function getFeaturedDatasetFromFirestore(): Promise<FeaturedDataset | null> {
+  if (!db) {
+    return null;
+  }
+
+  const snapshot = await getDoc(doc(db, "config", "featuredDataset"));
+  if (!snapshot.exists()) {
+    return null;
+  }
+
+  return snapshot.data() as FeaturedDataset;
 }

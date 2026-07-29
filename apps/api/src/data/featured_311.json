@@ -1,0 +1,384 @@
+{
+  "dataset_id": "nyc-311-zip-complaints-2020-2025",
+  "title": "NYC 311 Service Requests by ZIP Code and Complaint Type (2020-2025)",
+  "description": "Annual counts of selected 311 complaint types grouped by incident ZIP code, derived from the raw 2010-present 311 export. Useful for tracking heat/hot-water burden and street-condition trends across New York City neighborhoods ahead of 2026 planning.",
+  "agency_name": "NYC 311 / Mayor's Office of Data Analytics",
+  "category": "Social Services",
+  "source_url": "https://data.cityofnewyork.us/Social-Services/311-Service-Requests-from-2010-to-Present/erm2-nwe9",
+  "years": [
+    2020,
+    2021,
+    2022,
+    2023,
+    2024,
+    2025
+  ],
+  "metrics": [
+    "zipcode",
+    "complaint_type",
+    "year",
+    "complaint_count"
+  ],
+  "rows": [
+    {
+      "zipcode": "10457",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2020,
+      "complaint_count": 6797
+    },
+    {
+      "zipcode": "10457",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2021,
+      "complaint_count": 7784
+    },
+    {
+      "zipcode": "10457",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2022,
+      "complaint_count": 8986
+    },
+    {
+      "zipcode": "10457",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2023,
+      "complaint_count": 7812
+    },
+    {
+      "zipcode": "10457",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2024,
+      "complaint_count": 8310
+    },
+    {
+      "zipcode": "10457",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2025,
+      "complaint_count": 6999
+    },
+    {
+      "zipcode": "11226",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2020,
+      "complaint_count": 5480
+    },
+    {
+      "zipcode": "11226",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2021,
+      "complaint_count": 7193
+    },
+    {
+      "zipcode": "11226",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2022,
+      "complaint_count": 8280
+    },
+    {
+      "zipcode": "11226",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2023,
+      "complaint_count": 6809
+    },
+    {
+      "zipcode": "11226",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2024,
+      "complaint_count": 7574
+    },
+    {
+      "zipcode": "11226",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2025,
+      "complaint_count": 9355
+    },
+    {
+      "zipcode": "10467",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2020,
+      "complaint_count": 5006
+    },
+    {
+      "zipcode": "10467",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2021,
+      "complaint_count": 5468
+    },
+    {
+      "zipcode": "10467",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2022,
+      "complaint_count": 7653
+    },
+    {
+      "zipcode": "10467",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2023,
+      "complaint_count": 7506
+    },
+    {
+      "zipcode": "10467",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2024,
+      "complaint_count": 9256
+    },
+    {
+      "zipcode": "10467",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2025,
+      "complaint_count": 9231
+    },
+    {
+      "zipcode": "10458",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2020,
+      "complaint_count": 4701
+    },
+    {
+      "zipcode": "10458",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2021,
+      "complaint_count": 5865
+    },
+    {
+      "zipcode": "10458",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2022,
+      "complaint_count": 8505
+    },
+    {
+      "zipcode": "10458",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2023,
+      "complaint_count": 7051
+    },
+    {
+      "zipcode": "10458",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2024,
+      "complaint_count": 8284
+    },
+    {
+      "zipcode": "10458",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2025,
+      "complaint_count": 9365
+    },
+    {
+      "zipcode": "10468",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2020,
+      "complaint_count": 4723
+    },
+    {
+      "zipcode": "10468",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2021,
+      "complaint_count": 5606
+    },
+    {
+      "zipcode": "10468",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2022,
+      "complaint_count": 7663
+    },
+    {
+      "zipcode": "10468",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2023,
+      "complaint_count": 7735
+    },
+    {
+      "zipcode": "10468",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2024,
+      "complaint_count": 7138
+    },
+    {
+      "zipcode": "10468",
+      "complaint_type": "HEAT/HOT WATER",
+      "year": 2025,
+      "complaint_count": 8911
+    },
+    {
+      "zipcode": "10314",
+      "complaint_type": "Street Condition",
+      "year": 2020,
+      "complaint_count": 802
+    },
+    {
+      "zipcode": "10314",
+      "complaint_type": "Street Condition",
+      "year": 2021,
+      "complaint_count": 1456
+    },
+    {
+      "zipcode": "10314",
+      "complaint_type": "Street Condition",
+      "year": 2022,
+      "complaint_count": 1520
+    },
+    {
+      "zipcode": "10314",
+      "complaint_type": "Street Condition",
+      "year": 2023,
+      "complaint_count": 1141
+    },
+    {
+      "zipcode": "10314",
+      "complaint_type": "Street Condition",
+      "year": 2024,
+      "complaint_count": 1182
+    },
+    {
+      "zipcode": "10314",
+      "complaint_type": "Street Condition",
+      "year": 2025,
+      "complaint_count": 1170
+    },
+    {
+      "zipcode": "10306",
+      "complaint_type": "Street Condition",
+      "year": 2020,
+      "complaint_count": 663
+    },
+    {
+      "zipcode": "10306",
+      "complaint_type": "Street Condition",
+      "year": 2021,
+      "complaint_count": 1053
+    },
+    {
+      "zipcode": "10306",
+      "complaint_type": "Street Condition",
+      "year": 2022,
+      "complaint_count": 1856
+    },
+    {
+      "zipcode": "10306",
+      "complaint_type": "Street Condition",
+      "year": 2023,
+      "complaint_count": 1061
+    },
+    {
+      "zipcode": "10306",
+      "complaint_type": "Street Condition",
+      "year": 2024,
+      "complaint_count": 1092
+    },
+    {
+      "zipcode": "10306",
+      "complaint_type": "Street Condition",
+      "year": 2025,
+      "complaint_count": 1043
+    },
+    {
+      "zipcode": "10312",
+      "complaint_type": "Street Condition",
+      "year": 2020,
+      "complaint_count": 711
+    },
+    {
+      "zipcode": "10312",
+      "complaint_type": "Street Condition",
+      "year": 2021,
+      "complaint_count": 1124
+    },
+    {
+      "zipcode": "10312",
+      "complaint_type": "Street Condition",
+      "year": 2022,
+      "complaint_count": 1527
+    },
+    {
+      "zipcode": "10312",
+      "complaint_type": "Street Condition",
+      "year": 2023,
+      "complaint_count": 901
+    },
+    {
+      "zipcode": "10312",
+      "complaint_type": "Street Condition",
+      "year": 2024,
+      "complaint_count": 1184
+    },
+    {
+      "zipcode": "10312",
+      "complaint_type": "Street Condition",
+      "year": 2025,
+      "complaint_count": 952
+    },
+    {
+      "zipcode": "11101",
+      "complaint_type": "Street Condition",
+      "year": 2020,
+      "complaint_count": 670
+    },
+    {
+      "zipcode": "11101",
+      "complaint_type": "Street Condition",
+      "year": 2021,
+      "complaint_count": 987
+    },
+    {
+      "zipcode": "11101",
+      "complaint_type": "Street Condition",
+      "year": 2022,
+      "complaint_count": 1034
+    },
+    {
+      "zipcode": "11101",
+      "complaint_type": "Street Condition",
+      "year": 2023,
+      "complaint_count": 860
+    },
+    {
+      "zipcode": "11101",
+      "complaint_type": "Street Condition",
+      "year": 2024,
+      "complaint_count": 1051
+    },
+    {
+      "zipcode": "11101",
+      "complaint_type": "Street Condition",
+      "year": 2025,
+      "complaint_count": 1040
+    },
+    {
+      "zipcode": "11385",
+      "complaint_type": "Street Condition",
+      "year": 2020,
+      "complaint_count": 685
+    },
+    {
+      "zipcode": "11385",
+      "complaint_type": "Street Condition",
+      "year": 2021,
+      "complaint_count": 939
+    },
+    {
+      "zipcode": "11385",
+      "complaint_type": "Street Condition",
+      "year": 2022,
+      "complaint_count": 1138
+    },
+    {
+      "zipcode": "11385",
+      "complaint_type": "Street Condition",
+      "year": 2023,
+      "complaint_count": 906
+    },
+    {
+      "zipcode": "11385",
+      "complaint_type": "Street Condition",
+      "year": 2024,
+      "complaint_count": 948
+    },
+    {
+      "zipcode": "11385",
+      "complaint_type": "Street Condition",
+      "year": 2025,
+      "complaint_count": 962
+    }
+  ]
+}

@@ -137,3 +137,33 @@ select {
   font-size: 0.9rem;
   color: #363636;
 }
+
+.featured-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.featured-table th,
+.featured-table td {
+  border: 1px solid #ded9cc;
+  padding: 0.45rem 0.6rem;
+  text-align: right;
+}
+
+.featured-table th:first-child,
+.featured-table td:first-child,
+.featured-table th:nth-child(2),
+.featured-table td:nth-child(2) {
+  text-align: left;
+}
+
+.featured-table th {
+  background: #f4f1ea;
+  font-weight: 600;
+}
+
+.featured-table tbody tr:nth-child(even) {
+  background: #fffcf5;
+}

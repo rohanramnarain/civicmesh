@@ -1,3 +1,5 @@
+import { getFeaturedDatasetFromFirestore } from "./firebase";
+
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() || "http://localhost:8000";
 
@@ -50,6 +52,77 @@ export async function searchDatasets(query: string): Promise<DatasetSearchResult
 
   const payload = (await response.json()) as { results: DatasetSearchResult[] };
   return payload.results;
+}
+
+export type FeaturedDataset = {
+  dataset_id: string;
+  title: string;
+  description: string;
+  agency_name: string;
+  category: string;
+  source_url: string;
+  years: number[];
+  metrics: string[];
+  rows: {
+    zipcode: string;
+    complaint_type: string;
+    year: number;
+    complaint_count: number;
+  }[];
+};
+
+export async function getFeaturedDataset(): Promise<FeaturedDataset> {
+  const fromFirestore = await getFeaturedDatasetFromFirestore();
+  if (fromFirestore) {
+    return fromFirestore;
+  }
+
+  const url = `${API_BASE_URL}/datasets/featured`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Featured dataset failed with status ${response.status}`);
+  }
+  const payload = (await response.json()) as { featured: FeaturedDataset };
+  return payload.featured;
+}
+
+export type ForecastPrediction = {
+  zipcode: string;
+  complaint_type: string;
+  source_year: number;
+  target_year: number;
+  source_count: number;
+  predicted_count: number;
+};
+
+export type ForecastResult = {
+  source_year: number;
+  target_year: number;
+  model_comparison: {
+    model_name: string;
+    mae: number;
+    rmse: number;
+    trained_on_rows: number;
+    validation_rows: number;
+  }[];
+  predictions: Record<string, ForecastPrediction[]>;
+};
+
+export async function runForecast311(rows: FeaturedDataset["rows"]): Promise<ForecastResult> {
+  const url = `${API_BASE_URL}/forecast311/train-and-predict`;
+  const response = await fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      rows,
+      source_year: 2025,
+      target_year: 2026,
+    }),
+  });
+  if (!response.ok) {
+    throw new Error(`Forecast failed with status ${response.status}`);
+  }
+  return response.json() as Promise<ForecastResult>;
 }
 
 export async function publishRun(
