@@ -26,6 +26,9 @@ migrate:
 build-embeddings:
 	cd apps/api && uv run python ../../scripts/build_embeddings.py --max-datasets 60
 
+featured-data:
+	cd apps/api && uv run python ../../scripts/aggregate_311_csv.py
+
 generate-10k-jobs:
 	curl -sS -X POST "http://localhost:8000/jobs/generated/build?target_count=10000" | cat
 

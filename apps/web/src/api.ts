@@ -1,3 +1,6 @@
+import { getFeaturedDatasetFromFirestore } from "./firebase";
+import { MOCK_FEATURED_DATASET } from "./mockFeaturedDataset";
+
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() || "http://localhost:8000";
 
@@ -50,6 +53,46 @@ export async function searchDatasets(query: string): Promise<DatasetSearchResult
 
   const payload = (await response.json()) as { results: DatasetSearchResult[] };
   return payload.results;
+}
+
+export type FeaturedDataset = {
+  dataset_id: string;
+  title: string;
+  description: string;
+  agency_name: string;
+  category: string;
+  source_url: string;
+  years: number[];
+  metrics: string[];
+  rows: {
+    zipcode: string;
+    complaint_type: string;
+    year: number;
+    complaint_count: number;
+  }[];
+};
+
+export async function getFeaturedDataset(): Promise<FeaturedDataset> {
+  const fromFirestore = await getFeaturedDatasetFromFirestore();
+  if (fromFirestore) {
+    return fromFirestore;
+  }
+
+  try {
+    const url = `${API_BASE_URL}/datasets/featured`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`Featured dataset failed with status ${response.status}`);
+    }
+    const payload = (await response.json()) as { featured: FeaturedDataset };
+    return payload.featured;
+  } catch (err) {
+    console.warn(
+      "[api] Failed to load featured dataset from API. Using mock dataset for local development:",
+      err
+    );
+    return MOCK_FEATURED_DATASET;
+  }
 }
 
 export async function publishRun(

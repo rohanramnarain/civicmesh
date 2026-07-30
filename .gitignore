@@ -17,6 +17,10 @@ dist/
 data/raw/
 data/processed/
 data/artifacts/
+artifacts/
 
 # OS
 .DS_Store
+civicmesh-1/
+civicmesh-1/
+civicmesh

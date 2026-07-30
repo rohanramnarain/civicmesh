@@ -13,12 +13,12 @@ This repository is the implementation workspace for that final product.
 
 ## Simplified Product Goal
 
-The product now centers on one forecasting workflow:
+The product now centers on one local-first forecasting workflow:
 
-1. Build embedding features from 311 complaint rows grouped by ZIP + complaint type.
-2. Train/evaluate Random Forest, XGBoost, and LightGBM on historical year-pairs.
-3. Run next-year inference from 2025 rows to predict 2026 totals per ZIP + complaint type.
-4. Return leaderboard metrics and per-model prediction outputs.
+1. Precompute 311 embeddings and forecast features offline for every ZIP + complaint-type + year key.
+2. Ship versioned, immutable ONNX model artifacts (Random Forest, XGBoost, LightGBM) to the frontend.
+3. Run next-year inference locally in the browser from a Firestore embedding record and the selected model.
+4. Display the prediction, model comparison metrics, and full provenance without calling a backend forecast API.
 
 ## Delivery Order (Explicit)
 
@@ -29,16 +29,16 @@ Implementation sequence is fixed:
 
 ### Phase 1: Web App First
 
-1. Connect web UI to POST /forecast311/train-and-predict.
-2. Add upload/import flow for 311 yearly rows (ZIP, complaint type, year, count).
-3. Run model comparison view (Random Forest, XGBoost, LightGBM) with MAE/RMSE table.
-4. Add prediction table for 2026 counts by ZIP + complaint type, filterable and exportable.
-5. Add reproducibility panel showing model config, source year, target year, and run timestamp.
+1. Build offline pipeline to normalize NYC 311 data and precompute embeddings.
+2. Publish compact, versioned embedding records to Firestore.
+3. Train Random Forest, XGBoost, and LightGBM candidates offline and export to ONNX.
+4. Run model inference locally in the browser via ONNX Runtime Web.
+5. Display prediction, model comparison metrics, and reproducibility provenance.
 
 ### Phase 2: Flutter + ONNX + Swift Bridge Later
 
 1. Freeze web model interface contract (request/response schema and feature rules).
-2. Convert trained model artifacts to ONNX and validate parity against web outputs.
+2. Reuse trained ONNX model artifacts and validate parity against web outputs.
 3. Build Swift bridge for ONNX Runtime and expose typed APIs to Flutter.
 4. Implement Flutter screens matching web behavior and metrics.
 5. Run parity suite to confirm Flutter predictions stay within acceptable tolerance from web baseline.
@@ -68,30 +68,19 @@ Current implementation status in this repo:
 
 - Monorepo with API, web app, worker simulator, mobile app, and DB migrations.
 - Local infrastructure via Docker Compose (Postgres/PostGIS, Redis, Qdrant).
-- FastAPI service with ingestion, embedding build, and 311 forecast training/prediction endpoints.
-- Web app (Vite + React + TypeScript) with local embedding compute and IndexedDB local run history.
+- FastAPI service with ingestion, embedding build, and publish validation endpoints.
+- Web app (Vite + React + TypeScript) with local ONNX inference, IndexedDB embedding cache, and provenance display.
+- Precomputed 311 embedding records, versioned release manifest, and ONNX model artifacts for Random Forest, XGBoost, and LightGBM.
 - Deterministic job recipes plus generated job catalog (10,000+ target).
 - Firebase Hosting/Auth scaffolding and deployment scripts.
 
-## Embedding Strategy: Current vs Final
+## Embedding Strategy
 
-Current implementation (interim):
-
-- The browser computes embeddings during interaction.
-- This is useful for prototyping and validating local runtime behavior.
-
-Final target implementation:
-
-- Precompute embeddings for NYC Open Data offline ahead of time.
-- Package and version those embedding artifacts.
-- Store them locally on device (or download once and cache locally).
-- Run retrieval/reranking against that local embedding store.
-- Keep model artifacts local as well, versioned and reproducible.
-
-Important nuance:
-
-- User query processing is still done at runtime on device.
-- The heavy corpus embedding step is moved to precompute pipelines.
+- 311 corpus embeddings are generated offline in a controlled release pipeline, quantized to int8, and stored in Firestore under versioned releases.
+- The browser fetches only the embedding record required for the selected ZIP + complaint type.
+- Fetched records are cached in IndexedDB and validated against the active release manifest (dataset, embedding, and feature-schema versions).
+- User query embeddings for the experimental dataset-search tool still run locally in the browser; they are not used by the 311 forecast flow.
+- Model artifacts (ONNX) are shipped with the web app and cached locally.
 
 ## Architecture Overview
 
@@ -130,7 +119,8 @@ Open: http://127.0.0.1:5173/
 Notes:
 
 - The UI renders without Firebase credentials.
-- API-backed actions (ingest/search/publish) require backend services.
+- The 311 forecast flow works in this mode using local mock embedding and dataset artifacts.
+- API-backed actions (ingest/search/publish) and real Firestore embedding reads require backend services or Firebase config.
 
 ### Full Local Stack
 
@@ -174,9 +164,12 @@ Endpoints:
 - GET /jobs/generated
 - GET /jobs/generated/{job_id}
 - POST /embeddings/build
-- POST /forecast311/train-and-predict
 - POST /runs/publish
 - GET /runs/mine
+
+Removed from the analysis path:
+
+- ~~POST /forecast311/train-and-predict~~ — 311 forecast inference now runs locally in the browser.
 
 Current curated MVP jobs:
 
@@ -219,9 +212,10 @@ firebase deploy --only firestore:rules,firestore:indexes,storage
 Near-term priorities:
 
 - Harden 311 ingestion and ZIP/complaint-type normalization.
-- Persist 2025 embedding artifacts and model outputs with explicit versioning.
+- Automate offline embedding generation, quantization, and Firestore publishing.
+- Add reference parity fixtures and CI checks for ONNX models.
 - Add training data QA checks (missing ZIPs, sparse complaint classes, outliers).
-- Add offline batch training script and reproducible model registry metadata.
+- Build offline batch training script and reproducible model registry metadata.
 - Expose simple forecast explorer views in web/mobile clients.
 
 Reference planning document: plan.md

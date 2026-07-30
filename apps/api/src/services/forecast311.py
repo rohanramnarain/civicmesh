@@ -176,12 +176,7 @@ def run_forecasting_pipeline(
 
 
 def _build_model_registry() -> dict[str, Any]:
-    missing = validate_optional_model_dependencies()
-    if missing:
-        joined = ", ".join(missing)
-        raise ValueError(f"Missing model dependencies: {joined}. Install them in apps/api.")
-
-    return {
+    registry: dict[str, Any] = {
         "random_forest": RandomForestRegressor(
             n_estimators=300,
             max_depth=18,
@@ -189,7 +184,10 @@ def _build_model_registry() -> dict[str, Any]:
             random_state=42,
             n_jobs=-1,
         ),
-        "xgboost": XGBRegressor(
+    }
+
+    if XGBRegressor is not None:
+        registry["xgboost"] = XGBRegressor(
             n_estimators=350,
             max_depth=8,
             learning_rate=0.05,
@@ -198,17 +196,19 @@ def _build_model_registry() -> dict[str, Any]:
             objective="reg:squarederror",
             random_state=42,
             n_jobs=4,
-        ),
-        "lightgbm": LGBMRegressor(
+        )
+
+    if LGBMRegressor is not None:
+        registry["lightgbm"] = LGBMRegressor(
             n_estimators=350,
             learning_rate=0.05,
             max_depth=-1,
             num_leaves=63,
             random_state=42,
             n_jobs=4,
-        ),
-    }
+        )
 
+    return registry
 
 def _build_series(rows: list[ForecastRow]) -> dict[tuple[str, str], dict[int, float]]:
     series: dict[tuple[str, str], dict[int, float]] = {}

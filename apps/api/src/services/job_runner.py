@@ -150,7 +150,7 @@ class JobRunner:
 
 
 def _pick_first(columns: list[dict[str, str]], keywords: list[str]) -> str | None:
-    lowered = [(c.get("name", "") + " " + c.get("display_name", "")).lower(), c.get("name", "") for c in columns]
+    lowered = [((c.get("name", "") + " " + c.get("display_name", "")).lower(), c.get("name", "")) for c in columns]
     for keyword in keywords:
         for haystack, name in lowered:
             if keyword in haystack and name:
