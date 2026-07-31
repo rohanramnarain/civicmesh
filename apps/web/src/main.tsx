@@ -1,10 +1,12 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import {
+  getFeaturedDataset,
   publishRun,
   runCatalogIngest,
   searchDatasets,
   type DatasetSearchResult,
+  type FeaturedDataset,
 } from "./api";
 import {
   EMBEDDING_MODELS,
@@ -12,9 +14,18 @@ import {
   cosineSimilarity,
   embedText,
 } from "./clientCompute";
-import { getBearerTokenOrDevToken, listenAuth, signInWithGoogle, signOutUser } from "./firebase";
+import { ACTIVE_RELEASE } from "./forecast/releaseManifest";
+import {
+  runLocalForecast,
+  type ForecastServiceResult,
+} from "./forecast/forecastService";
+import { getForecastUserMessage } from "./forecast/forecastErrors";
+import { getBearerTokenOrDevToken, isFirebaseConfigured, listenAuth, signInWithGoogle, signOutUser } from "./firebase";
 import { listRuns, putRun, type RunRecord } from "./localStore";
 import "./styles.css";
+
+const FORECAST_MODELS = ["random_forest", "xgboost", "lightgbm"] as const;
+type ForecastModelName = (typeof FORECAST_MODELS)[number];
 
 function App() {
   const [question, setQuestion] = React.useState(
@@ -31,6 +42,13 @@ function App() {
   const [ingestStatus, setIngestStatus] = React.useState<string>("Catalog not ingested yet");
   const [loadingIngest, setLoadingIngest] = React.useState(false);
   const [loadingSearch, setLoadingSearch] = React.useState(false);
+  const [featured, setFeatured] = React.useState<FeaturedDataset | null>(null);
+  const [loadingFeatured, setLoadingFeatured] = React.useState(false);
+  const [forecast, setForecast] = React.useState<ForecastServiceResult | null>(null);
+  const [forecastModel, setForecastModel] = React.useState<ForecastModelName>("random_forest");
+  const [selectedZip, setSelectedZip] = React.useState<string>("");
+  const [selectedComplaintType, setSelectedComplaintType] = React.useState<string>("");
+  const [loadingForecast, setLoadingForecast] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
@@ -45,6 +63,22 @@ function App() {
     return unsubscribe;
   }, []);
 
+  React.useEffect(() => {
+    if (!featured || featured.rows.length === 0) {
+      setSelectedZip("");
+      setSelectedComplaintType("");
+      return;
+    }
+
+    const uniqueZips = Array.from(new Set(featured.rows.map((r) => r.zipcode))).sort();
+    const uniqueTypes = Array.from(new Set(featured.rows.map((r) => r.complaint_type))).sort();
+
+    setSelectedZip((prev) => (prev && uniqueZips.includes(prev) ? prev : uniqueZips[0] ?? ""));
+    setSelectedComplaintType((prev) =>
+      prev && uniqueTypes.includes(prev) ? prev : uniqueTypes[0] ?? ""
+    );
+  }, [featured]);
+
   async function handleIngestClick() {
     setError(null);
     setLoadingIngest(true);
@@ -57,6 +91,41 @@ function App() {
       setError(err instanceof Error ? err.message : "Ingest request failed");
     } finally {
       setLoadingIngest(false);
+    }
+  }
+
+  async function handleLoadFeaturedClick() {
+    setError(null);
+    setLoadingFeatured(true);
+    try {
+      const dataset = await getFeaturedDataset();
+      setFeatured(dataset);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Featured dataset request failed");
+    } finally {
+      setLoadingFeatured(false);
+    }
+  }
+
+  async function handleForecastClick() {
+    if (!selectedZip || !selectedComplaintType) return;
+    setError(null);
+    setLoadingForecast(true);
+    try {
+      const result = await runLocalForecast(
+        {
+          releaseId: ACTIVE_RELEASE.releaseId,
+          sourceYear: ACTIVE_RELEASE.sourceYear,
+          zipcode: selectedZip,
+          complaintType: selectedComplaintType,
+        },
+        forecastModel
+      );
+      setForecast(result);
+    } catch (err) {
+      setError(getForecastUserMessage(err));
+    } finally {
+      setLoadingForecast(false);
     }
   }
 
@@ -228,6 +297,175 @@ function App() {
             </li>
           ))}
         </ul>
+      </section>
+
+      <section className="panel">
+        <h2>Featured Dataset: 311 Complaints by ZIP (2020-2025)</h2>
+        <p>
+          Pre-loaded sample of NYC 311 heat/hot-water and street-condition complaints
+          grouped by ZIP code and year. Safe for offline demos.
+        </p>
+        <div className="controls">
+          <button type="button" onClick={handleLoadFeaturedClick} disabled={loadingFeatured}>
+            {loadingFeatured ? "Loading..." : "Load Featured Dataset"}
+          </button>
+          {featured ? (
+            <span className="status">
+              {featured.title} — {featured.rows.length} rows
+            </span>
+          ) : null}
+        </div>
+
+        {featured ? (
+          <>
+            {!isFirebaseConfigured() ? (
+              <p className="warning">
+                Firebase is not configured. Forecasts are running against local
+                mock data.
+              </p>
+            ) : null}
+            <p className="meta">
+              <strong>{featured.agency_name}</strong> | {featured.category} |{" "}
+              <a href={featured.source_url} target="_blank" rel="noreferrer">
+                Open source dataset
+              </a>
+            </p>
+            <table className="featured-table">
+              <thead>
+                <tr>
+                  <th>ZIP</th>
+                  <th>Complaint Type</th>
+                  {featured.years.map((year) => (
+                    <th key={year}>{year}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {Array.from(
+                  new Map(
+                    featured.rows.map((r) => [
+                      `${r.zipcode}::${r.complaint_type}`,
+                      { zipcode: r.zipcode, complaint_type: r.complaint_type },
+                    ])
+                  ).values()
+                ).map((key) => {
+                  const byYear = new Map(
+                    featured.rows
+                      .filter(
+                        (r) =>
+                          r.zipcode === key.zipcode &&
+                          r.complaint_type === key.complaint_type
+                      )
+                      .map((r) => [r.year, r.complaint_count])
+                  );
+                  return (
+                    <tr key={`${key.zipcode}::${key.complaint_type}`}>
+                      <td>{key.zipcode}</td>
+                      <td>{key.complaint_type}</td>
+                      {featured.years.map((year) => (
+                        <td key={year}>{byYear.get(year) ?? 0}</td>
+                      ))}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            <div className="controls">
+              <label htmlFor="forecast-zip-select">ZIP code</label>
+              <select
+                id="forecast-zip-select"
+                value={selectedZip}
+                onChange={(event) => setSelectedZip(event.target.value)}
+                disabled={!featured}
+              >
+                {featured
+                  ? Array.from(new Set(featured.rows.map((r) => r.zipcode))).sort().map((zip) => (
+                      <option key={zip} value={zip}>
+                        {zip}
+                      </option>
+                    ))
+                  : null}
+              </select>
+
+              <label htmlFor="forecast-type-select">Complaint type</label>
+              <select
+                id="forecast-type-select"
+                value={selectedComplaintType}
+                onChange={(event) => setSelectedComplaintType(event.target.value)}
+                disabled={!featured}
+              >
+                {featured
+                  ? Array.from(new Set(featured.rows.map((r) => r.complaint_type))).sort().map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))
+                  : null}
+              </select>
+
+              <label htmlFor="forecast-model-select">Forecast model</label>
+              <select
+                id="forecast-model-select"
+                value={forecastModel}
+                onChange={(event) => setForecastModel(event.target.value as ForecastModelName)}
+              >
+                {FORECAST_MODELS.map((m) => (
+                  <option key={m} value={m}>
+                    {m.replace("_", " ")}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                onClick={handleForecastClick}
+                disabled={loadingForecast || !selectedZip || !selectedComplaintType}
+              >
+                {loadingForecast ? "Predicting..." : "Predict 2026 locally"}
+              </button>
+            </div>
+
+            {forecast ? (
+              <>
+                <h3>2026 Local Prediction</h3>
+                <p className="meta">
+                  <strong>{forecast.zipcode}</strong> | {forecast.complaintType} |{" "}
+                  {forecast.prediction.toFixed(2)} predicted complaints
+                </p>
+                <p className="meta">
+                  Model: {forecast.modelName} ({forecast.modelVersion})
+                </p>
+                <p className="meta">
+                  Build-time validation MAE: {forecast.mae.toFixed(2)} | RMSE:{" "}
+                  {forecast.rmse.toFixed(2)}
+                </p>
+                <p className="warning">
+                  Forecasts are estimates based on historical patterns and should not be
+                  used as the sole basis for policy or operational decisions. Model
+                  quality varies by ZIP code and complaint type.
+                </p>
+                <details>
+                  <summary>Provenance</summary>
+                  <ul className="result-list">
+                    <li>Dataset version: {forecast.provenance.dataset_version}</li>
+                    <li>Embedding version: {forecast.provenance.embedding_version}</li>
+                    <li>Feature schema: {forecast.provenance.feature_schema_version}</li>
+                    <li>Source year: {forecast.provenance.source_year}</li>
+                    <li>Target year: {forecast.provenance.target_year}</li>
+                    <li>Model name: {forecast.provenance.model_name}</li>
+                    <li>Model version: {forecast.provenance.model_version}</li>
+                    <li>Model checksum: {forecast.provenance.model_checksum}</li>
+                    <li>Embedding checksum: {forecast.provenance.embedding_checksum}</li>
+                    <li>Firestore release: {forecast.provenance.firestore_release_id}</li>
+                    <li>Record generated at: {forecast.provenance.generated_at}</li>
+                    <li>Runtime: {forecast.provenance.local_runtime}</li>
+                    <li>Execution provider: {forecast.provenance.execution_provider}</li>
+                  </ul>
+                </details>
+              </>
+            ) : null}
+          </>
+        ) : null}
       </section>
 
       <section className="grid">

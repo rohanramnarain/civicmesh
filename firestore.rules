@@ -24,6 +24,26 @@ service cloud.firestore {
       allow create, update, delete: if false;
     }
 
+    match /forecast_releases/{releaseId} {
+      allow read: if true;
+      allow write: if false;
+
+      match /embedding_records/{recordId} {
+        allow read: if true;
+        allow write: if false;
+      }
+
+      match /metadata/{docId} {
+        allow read: if true;
+        allow write: if false;
+      }
+
+      match /model_manifest/{docId} {
+        allow read: if true;
+        allow write: if false;
+      }
+    }
+
     match /users/{uid}/runs/{runId} {
       allow read, create, update, delete: if isOwner(uid);
     }
