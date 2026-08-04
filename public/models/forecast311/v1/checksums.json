@@ -1,0 +1,5 @@
+{
+  "random-forest.onnx": "sha256:8bf9b7dc579a6d74e2bc08cf2b35bd323d6055f8ffcd3f095985eaf5ab0f08fc",
+  "xgboost.onnx": "sha256:141dd120b33ff49fb6c0126ceb24af750bec8b2f47a57122b9f06a569c61fe55",
+  "lightgbm.onnx": "sha256:dd201eb56d34408b88263a30d5460786bba2a869e7c3108d2b09057a0a6cb479"
+}

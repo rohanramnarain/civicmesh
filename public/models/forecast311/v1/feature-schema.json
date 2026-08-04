@@ -1,0 +1,167 @@
+{
+  "schema_version": "forecast-feature-schema-v1",
+  "feature_schema_version": "forecast-features-v1",
+  "status": "DRAFT - PENDING FINAL APPROVAL",
+  "approved_by": "Kevin Guillermo",
+  "approval_date": "2026-07-27",
+  "source_year": 2025,
+  "target_year": 2026,
+  "description": "Feature schema for NYC 311 next-year complaint-count forecasting. The full model input vector is built by concatenating count features, trend features, and the decoded embedding vector in the exact order listed below.",
+  "scope": {
+    "complaint_types": ["HEAT/HOT WATER", "Street Condition"],
+    "years": [2020, 2021, 2022, 2023, 2024, 2025],
+    "source_data": "civicmesh-1/nycdata/311data.csv",
+    "source_data_provider": "NYC Open Data via Data.gov",
+    "source_data_url": "https://catalog.data.gov/dataset/311-service-requests-from-2010-to-present"
+  },
+  "data_profile_summary": {
+    "profiled_at": "2026-07-27",
+    "profiling_script": "scripts/profile_311_data.py",
+    "total_raw_rows": "TBD - full count pending",
+    "complaint_type_counts": {
+      "HEAT/HOT WATER": 1645333,
+      "Street Condition": 497864,
+      "Street Light Condition": 297212,
+      "Heat/Hot Water": 1814,
+      "DEP Street Condition": 651
+    },
+    "invalid_zip_examples": {
+      "None": 310577,
+      "0": 8,
+      "NA": 4,
+      "N/A": 3,
+      "3723": 1,
+      "1055O": 1,
+      "1155": 1,
+      "1172": 1,
+      "Unkno": 1,
+      "Unsur": 1,
+      "na": 1,
+      "0000": 1,
+      "3361": 1,
+      "note": "All invalid or missing ZIP codes are marked as 'MISSING' and excluded from embedding records."
+    },
+    "year_distribution_2020_2025": {
+      "2020": 2942024,
+      "2021": 3220882,
+      "2022": 3169960,
+      "2023": 3224723,
+      "2024": 3456770,
+      "2025": 3655037
+    }
+  },
+  "cleaning_rules": {
+    "raw_data_policy": "Source data is never modified. All cleaning is performed by a reproducible script.",
+    "notes": "Rules I wrote based on instructions from Kevin.",
+    "zipcode": {
+      "description": "Incident ZIP code where the complaint was reported.",
+      "rules": [
+        "Strip leading and trailing whitespace.",
+        "Remove all non-digit characters.",
+        "Keep only values matching ^[0-9]{5}$.",
+        "Mark invalid or missing ZIP codes as 'MISSING'.",
+        "Exclude rows where zipcode is 'MISSING' from embedding records."
+      ]
+    },
+    "complaint_type": {
+      "description": "NYC 311 complaint type taxonomy.",
+      "rules": [
+        "Convert to lowercase for comparison and matching purposes.",
+        "Strip leading and trailing whitespace.",
+        "Collapse internal whitespace to a single space.",
+        "Apply the approved alias mapping to produce the final canonical value.",
+        "Keep the NYC Open Data raw label for categories without an approved alias.",
+        "Do not merge aliases unless explicitly approved by the data steward."
+      ],
+      "alias_mapping": {
+        "HEAT/HOT WATER": [
+          "HEAT/HOT WATER",
+          "Heat/Hot Water"
+        ]
+      }
+    },
+    "complaint_count": {
+      "description": "Annual count of complaints for the ZIP + complaint-type + year key.",
+      "rules": [
+        "Treat missing values as zero.",
+        "Treat negative values as zero.",
+        "Round to a non-negative integer."
+      ]
+    },
+    "duplicates": {
+      "description": "Exact duplicate rows.",
+      "rules": [
+        "After standardization, remove exact duplicate rows keyed by (zipcode, complaint_type, year).",
+        "Keep the first occurrence and discard subsequent duplicates."
+      ]
+    },
+    "outliers": {
+      "description": "Extreme complaint-count values.",
+      "rules": [
+        "Do not automatically remove outliers.",
+        "Flag counts above the 99th percentile in the coverage report for human review.",
+        "Document any flagged outliers in the release notes."
+      ]
+    }
+  },
+  "feature_order": [
+    "counts.current",
+    "counts.lag_1",
+    "counts.lag_2",
+    "trend_features.0",
+    "trend_features.1",
+    "trend_features.2",
+    "embedding.0",
+    "embedding.1",
+    "...",
+    "embedding.N-1"
+  ],
+  "counts": {
+    "current": {
+      "description": "Complaint count for the source year.",
+      "type": "float"
+    },
+    "lag_1": {
+      "description": "Complaint count for source_year - 1. If missing, imputed with current.",
+      "type": "float"
+    },
+    "lag_2": {
+      "description": "Complaint count for source_year - 2. If missing, imputed with lag_1.",
+      "type": "float"
+    }
+  },
+  "trend_features": {
+    "description": "Derived from counts in the exact order [current - lag_1, lag_1 - lag_2, mean(current, lag_1, lag_2)].",
+    "length": 3,
+    "type": "float"
+  },
+  "embedding": {
+    "description": "Decoded and denormalized embedding vector appended after trend features.",
+    "dimension": 32,
+    "encoding": "int8-scale",
+    "type": "float32",
+    "generation_method": "Deterministic hash embedding of standardized zipcode and complaint_type."
+  },
+  "imputation": {
+    "description": "When historical counts are missing, lag values are forward-filled: lag_2 uses lag_1, lag_1 uses current.",
+    "strategy": "forward_fill"
+  },
+  "record_format": {
+    "record_id": "{sourceYear}_{zipcode}_{normalizedComplaintTypeHash}",
+    "normalized_complaint_type_hash": "First 16 characters of SHA-256 of standardized complaint_type",
+    "fields": [
+      "schema_version",
+      "dataset_version",
+      "embedding_version",
+      "feature_schema_version",
+      "zipcode",
+      "complaint_type",
+      "source_year",
+      "counts",
+      "trend_features",
+      "embedding",
+      "checksum",
+      "generated_at"
+    ]
+  }
+}
