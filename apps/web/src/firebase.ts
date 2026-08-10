@@ -11,10 +11,7 @@ import {
 import {
   type Firestore,
   getFirestore,
-  doc,
-  getDoc,
 } from "firebase/firestore";
-import type { FeaturedDataset } from "./api";
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -80,17 +77,4 @@ export function getForecastDb(): Firestore | null {
 
 export function isFirebaseConfigured(): boolean {
   return firebaseEnabled;
-}
-
-export async function getFeaturedDatasetFromFirestore(): Promise<FeaturedDataset | null> {
-  if (!db) {
-    return null;
-  }
-
-  const snapshot = await getDoc(doc(db, "config", "featuredDataset"));
-  if (!snapshot.exists()) {
-    return null;
-  }
-
-  return snapshot.data() as FeaturedDataset;
 }

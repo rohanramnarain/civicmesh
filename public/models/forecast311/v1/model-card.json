@@ -5,42 +5,42 @@
       "model_version": "random-forest-2026-v1",
       "feature_schema_version": "forecast-features-v1",
       "embedding_version": "311-embed-v1",
-      "mae": 292.7368,
-      "rmse": 743.5516,
-      "train_mae": 84.4762,
-      "train_rmse": 231.2826,
-      "training_rows": 1145,
-      "validation_rows": 378,
+      "mae": 205.4486,
+      "rmse": 2011.306,
+      "train_mae": 86.6979,
+      "train_rmse": 367.6766,
+      "training_rows": 8763,
+      "validation_rows": 2958,
       "onnx_file": "random-forest.onnx",
-      "checksum": "sha256:8bf9b7dc579a6d74e2bc08cf2b35bd323d6055f8ffcd3f095985eaf5ab0f08fc"
+      "checksum": "sha256:95df2c94daaa7d85a0e0714cfef22b0eb0658248bd729a4699709aff763caef6"
     },
     {
       "model_name": "xgboost",
       "model_version": "xgboost-2026-v1",
       "feature_schema_version": "forecast-features-v1",
       "embedding_version": "311-embed-v1",
-      "mae": 303.9329,
-      "rmse": 753.3887,
-      "train_mae": 4.993,
-      "train_rmse": 6.8301,
-      "training_rows": 1145,
-      "validation_rows": 378,
+      "mae": 190.327,
+      "rmse": 1013.2122,
+      "train_mae": 50.8574,
+      "train_rmse": 77.4214,
+      "training_rows": 8763,
+      "validation_rows": 2958,
       "onnx_file": "xgboost.onnx",
-      "checksum": "sha256:141dd120b33ff49fb6c0126ceb24af750bec8b2f47a57122b9f06a569c61fe55"
+      "checksum": "sha256:fff63a076dcd5795f0e898478dbf1741f0b2c948a657d2e497b46cee62777c48"
     },
     {
       "model_name": "lightgbm",
       "model_version": "lightgbm-2026-v1",
       "feature_schema_version": "forecast-features-v1",
       "embedding_version": "311-embed-v1",
-      "mae": 301.257,
-      "rmse": 679.4697,
-      "train_mae": 66.7818,
-      "train_rmse": 254.0874,
-      "training_rows": 1145,
-      "validation_rows": 378,
+      "mae": 220.6012,
+      "rmse": 2106.0156,
+      "train_mae": 85.2896,
+      "train_rmse": 777.577,
+      "training_rows": 8763,
+      "validation_rows": 2958,
       "onnx_file": "lightgbm.onnx",
-      "checksum": "sha256:dd201eb56d34408b88263a30d5460786bba2a869e7c3108d2b09057a0a6cb479"
+      "checksum": "sha256:3e37c31b49c60bfeb70eb0a6b65bfae5e52a386fb6c7dcb4501477a15ebf99f3"
     }
   ]
 }

@@ -32,4 +32,7 @@ function onnxWasmMjsPlugin() {
 export default defineConfig({
   plugins: [react(), onnxWasmMjsPlugin()],
   publicDir: "../../public",
+  test: {
+    exclude: ["node_modules", "e2e"],
+  },
 });

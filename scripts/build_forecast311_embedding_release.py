@@ -45,9 +45,40 @@ EMBEDDING_MODEL = "hash-embed-v1"
 ALIAS_MAP: dict[str, str] = {
     "heat/hot water": "HEAT/HOT WATER",
     "street condition": "Street Condition",
+    "illegal parking": "Illegal Parking",
+    "noise - residential": "Noise - Residential",
+    "noise - street/sidewalk": "Noise - Street/Sidewalk",
+    "noise - vehicle": "Noise - Vehicle",
+    "noise - commercial": "Noise - Commercial",
+    "noise - helicopter": "Noise - Helicopter",
+    "noise": "Noise",
+    "blocked driveway": "Blocked Driveway",
+    "unsanitary condition": "UNSANITARY CONDITION",
+    "dirty condition": "Dirty Condition",
+    "water system": "Water System",
+    "traffic signal condition": "Traffic Signal Condition",
+    "rodent": "Rodent",
+    "graffiti": "Graffiti",
 }
 
-SCOPE_TYPES = {"HEAT/HOT WATER", "Street Condition"}
+SCOPE_TYPES = {
+    "HEAT/HOT WATER",
+    "Street Condition",
+    "Illegal Parking",
+    "Noise - Residential",
+    "Noise - Street/Sidewalk",
+    "Noise - Vehicle",
+    "Noise - Commercial",
+    "Noise - Helicopter",
+    "Noise",
+    "Blocked Driveway",
+    "UNSANITARY CONDITION",
+    "Dirty Condition",
+    "Water System",
+    "Traffic Signal Condition",
+    "Rodent",
+    "Graffiti",
+}
 
 
 def standardize_zip(raw_zip: str | None) -> str:
@@ -199,9 +230,9 @@ def load_and_clean_rows(
     con.execute(f"""
         CREATE OR REPLACE VIEW nyc311 AS
         SELECT
-            cast("created_date" as date) AS created_ts,
-            "complaint_type" AS complaint_type,
-            "incident_zip" AS incident_zip
+            strptime("Created Date", '%m/%d/%Y %I:%M:%S %p')::date AS created_ts,
+            "Problem (formerly Complaint Type)" AS complaint_type,
+            "Incident Zip" AS incident_zip
         FROM read_csv_auto('{csv_path}', header=true, all_varchar=true)
     """)
 
@@ -333,6 +364,7 @@ def build_release_artifacts(
         if r["counts"]["current"] > outlier_threshold
     ]
 
+    target_source_year = max(source_years)
     manifest = {
         "release_id": release_id,
         "dataset_version": DATASET_VERSION,
@@ -341,9 +373,14 @@ def build_release_artifacts(
         "embedding_model": EMBEDDING_MODEL,
         "embedding_dimension": embedding_dim,
         "source_years": source_years,
-        "target_year": max(source_years) + 1,
+        "target_year": target_source_year + 1,
         "record_count": len(records),
         "records_path": str(records_path),
+        "combinations": [
+            {"zipcode": r["zipcode"], "complaint_type": r["complaint_type"]}
+            for r in records
+            if r["source_year"] == target_source_year
+        ],
         "generated_at": datetime.now(tz=UTC).isoformat(),
     }
 

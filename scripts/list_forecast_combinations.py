@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import ssl
 import sys
 from pathlib import Path
 from urllib.request import Request, urlopen
@@ -17,7 +18,7 @@ from urllib.error import HTTPError
 
 ENV_PATH = Path(__file__).resolve().parents[1] / "apps" / "web" / ".env"
 PROJECT_ID = "civicgrid-e8b69"
-RELEASE_ID = "20260728-164958"
+RELEASE_ID = "20260810-165551"
 DATABASE_ID = "nycdata"
 
 
@@ -39,8 +40,11 @@ def firestore_list_documents(collection_path: str) -> list[dict]:
         f"databases/{DATABASE_ID}/documents/{collection_path}?key={api_key}&pageSize=1000"
     )
     req = Request(url, method="GET")
+    # macOS Python from python.org may lack up-to-date CA certs; allow override.
+    verify_ssl = os.environ.get("VERIFY_FIRESTORE_SSL", "true").lower() != "false"
+    context = ssl.create_default_context() if verify_ssl else ssl._create_unverified_context()
     try:
-        with urlopen(req, timeout=30) as resp:
+        with urlopen(req, timeout=30, context=context) as resp:
             data = json.loads(resp.read().decode("utf-8"))
     except HTTPError as exc:
         body = exc.read().decode("utf-8", errors="ignore")
@@ -78,6 +82,11 @@ def main() -> int:
     print(f"Unique ZIP + complaint-type combinations: {len(combinations)}")
     if invalid:
         print(f"Records missing zipcode or complaint_type: {invalid}")
+
+    print("\nComplaint types:")
+    for complaint_type in sorted({c[1] for c in combinations}):
+        count = sum(1 for c in combinations if c[1] == complaint_type)
+        print(f"  {complaint_type} ({count} ZIPs)")
 
     print("\nFirst 20 combinations:")
     for zipcode, complaint_type in sorted(combinations)[:20]:

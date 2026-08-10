@@ -15,12 +15,12 @@ import {
   Upload,
 } from "lucide-react";
 import {
-  getFeaturedDataset,
+  getSelectorDataset,
   publishRun,
   runCatalogIngest,
   searchDatasets,
   type DatasetSearchResult,
-  type FeaturedDataset,
+  type SelectorDataset,
 } from "./api";
 import {
   EMBEDDING_MODELS,
@@ -56,7 +56,7 @@ function App() {
   const [ingestStatus, setIngestStatus] = React.useState<string>("Catalog not ingested yet");
   const [loadingIngest, setLoadingIngest] = React.useState(false);
   const [loadingSearch, setLoadingSearch] = React.useState(false);
-  const [featured, setFeatured] = React.useState<FeaturedDataset | null>(null);
+  const [featured, setFeatured] = React.useState<SelectorDataset | null>(null);
   const [loadingFeatured, setLoadingFeatured] = React.useState(false);
   const [forecast, setForecast] = React.useState<ForecastServiceResult | null>(null);
   const [forecastModel, setForecastModel] = React.useState<ForecastModelName>("random_forest");
@@ -64,7 +64,7 @@ function App() {
   const [selectedComplaintType, setSelectedComplaintType] = React.useState<string>("");
   const [loadingForecast, setLoadingForecast] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
-  const featuredIsMock = featured?.dataset_id.includes("mock") ?? false;
+  const featuredIsMock = featured?.is_mock ?? false;
 
   React.useEffect(() => {
     listRuns(5)
@@ -79,14 +79,18 @@ function App() {
   }, []);
 
   React.useEffect(() => {
-    if (!featured || featured.rows.length === 0) {
+    if (!featured || featured.combinations.length === 0) {
       setSelectedZip("");
       setSelectedComplaintType("");
       return;
     }
 
-    const uniqueZips = Array.from(new Set(featured.rows.map((r) => r.zipcode))).sort();
-    const uniqueTypes = Array.from(new Set(featured.rows.map((r) => r.complaint_type))).sort();
+    const uniqueZips = Array.from(
+      new Set(featured.combinations.map((c) => c.zipcode))
+    ).sort();
+    const uniqueTypes = Array.from(
+      new Set(featured.combinations.map((c) => c.complaint_type))
+    ).sort();
 
     setSelectedZip((prev) => (prev && uniqueZips.includes(prev) ? prev : uniqueZips[0] ?? ""));
     setSelectedComplaintType((prev) =>
@@ -113,10 +117,18 @@ function App() {
     setError(null);
     setLoadingFeatured(true);
     try {
-      const dataset = await getFeaturedDataset();
-      setFeatured(dataset);
+      const result = await getSelectorDataset();
+      if (result.status === "ready") {
+        setFeatured(result.dataset);
+      } else if (result.status === "empty") {
+        setFeatured(null);
+        setError("No forecast combinations are available for this release.");
+      } else {
+        setFeatured(null);
+        setError(result.reason || "Selector dataset is unavailable.");
+      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Featured dataset request failed");
+      setError(err instanceof Error ? err.message : "Selector dataset request failed");
     } finally {
       setLoadingFeatured(false);
     }
@@ -358,7 +370,11 @@ function App() {
           </div>
           <span className={`status-chip ${featuredIsMock ? "status-chip-warning" : "status-chip-live"}`}>
             <Database size={15} aria-hidden="true" />
-            {featured ? (featuredIsMock ? "Mock selector data" : "Live selector data") : "Dataset not loaded"}
+            {featured
+              ? featuredIsMock
+                ? `Mock selector data (${featured.combinations.length} combinations)`
+                : `Live selector data (${featured.combinations.length} combinations)`
+              : "Dataset not loaded"}
           </span>
         </div>
         <p className="section-intro">
@@ -367,69 +383,55 @@ function App() {
         <div className="controls">
           <button type="button" onClick={handleLoadFeaturedClick} disabled={loadingFeatured}>
             <Database size={16} aria-hidden="true" />
-            {loadingFeatured ? "Loading..." : "Load 311 Dataset"}
+            {loadingFeatured ? "Loading..." : "Load 311 Release"}
           </button>
           {featured ? (
-            <span className="status">
-              {featured.title} — {featured.rows.length} rows
+            <span className="status" data-testid="release-status">
+              {featuredIsMock ? "Mock release" : "Live release"} {featured.release_id} —{" "}
+              <span data-testid="combination-count">{featured.combinations.length} combinations</span>
             </span>
           ) : null}
         </div>
 
         {featured ? (
           <>
-            {!isFirebaseConfigured() || featuredIsMock ? (
+            {featuredIsMock ? (
               <p className="warning">
-                {featuredIsMock
-                  ? "Selector options are using the bundled demo sample. Forecast records still load from Firestore when Firebase is configured."
-                  : "Firebase is not configured. Forecasts are running against local mock data."}
+                Selector options are using the bundled demo sample. Forecast
+                records still load from Firestore when Firebase is configured.
+              </p>
+            ) : null}
+            {!isFirebaseConfigured() ? (
+              <p className="warning">
+                Firebase is not configured. Forecasts are running against local
+                mock data.
               </p>
             ) : null}
             <p className="meta">
-              <strong>{featured.agency_name}</strong> | {featured.category} |{" "}
-              <a href={featured.source_url} target="_blank" rel="noreferrer">
-                Open source dataset
-              </a>
+              <strong>Release {featured.release_id}</strong> |{" "}
+              {featured.combinations.length} valid combinations | target year{" "}
+              {featured.target_year}
             </p>
-            <div className="table-scroll" role="region" aria-label="311 complaint history" tabIndex={0}>
+            <div
+              className="table-scroll"
+              role="region"
+              aria-label="Available ZIP and complaint-type combinations"
+              tabIndex={0}
+            >
               <table className="featured-table">
                 <thead>
-                <tr>
-                  <th>ZIP</th>
-                  <th>Complaint Type</th>
-                  {featured.years.map((year) => (
-                    <th key={year}>{year}</th>
-                  ))}
-                </tr>
+                  <tr>
+                    <th>ZIP</th>
+                    <th>Complaint Type</th>
+                  </tr>
                 </thead>
                 <tbody>
-                {Array.from(
-                  new Map(
-                    featured.rows.map((r) => [
-                      `${r.zipcode}::${r.complaint_type}`,
-                      { zipcode: r.zipcode, complaint_type: r.complaint_type },
-                    ])
-                  ).values()
-                ).map((key) => {
-                  const byYear = new Map(
-                    featured.rows
-                      .filter(
-                        (r) =>
-                          r.zipcode === key.zipcode &&
-                          r.complaint_type === key.complaint_type
-                      )
-                      .map((r) => [r.year, r.complaint_count])
-                  );
-                  return (
-                    <tr key={`${key.zipcode}::${key.complaint_type}`}>
-                      <td>{key.zipcode}</td>
-                      <td>{key.complaint_type}</td>
-                      {featured.years.map((year) => (
-                        <td key={year}>{byYear.get(year) ?? 0}</td>
-                      ))}
+                  {featured.combinations.map((combo) => (
+                    <tr key={`${combo.zipcode}::${combo.complaint_type}`}>
+                      <td>{combo.zipcode}</td>
+                      <td>{combo.complaint_type}</td>
                     </tr>
-                  );
-                })}
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -443,9 +445,15 @@ function App() {
                   onChange={(event) => setSelectedZip(event.target.value)}
                   disabled={!featured}
                 >
-                  {Array.from(new Set(featured.rows.map((r) => r.zipcode))).sort().map((zip) => (
-                    <option key={zip} value={zip}>{zip}</option>
-                  ))}
+                  {Array.from(
+                    new Set(featured.combinations.map((c) => c.zipcode))
+                  )
+                    .sort()
+                    .map((zip) => (
+                      <option key={zip} value={zip}>
+                        {zip}
+                      </option>
+                    ))}
                 </select>
               </div>
 
@@ -454,12 +462,20 @@ function App() {
                 <select
                   id="forecast-type-select"
                   value={selectedComplaintType}
-                  onChange={(event) => setSelectedComplaintType(event.target.value)}
+                  onChange={(event) =>
+                    setSelectedComplaintType(event.target.value)
+                  }
                   disabled={!featured}
                 >
-                  {Array.from(new Set(featured.rows.map((r) => r.complaint_type))).sort().map((type) => (
-                    <option key={type} value={type}>{type}</option>
-                  ))}
+                  {featured.combinations
+                    .filter((c) => c.zipcode === selectedZip)
+                    .map((c) => c.complaint_type)
+                    .sort()
+                    .map((type) => (
+                      <option key={type} value={type}>
+                        {type}
+                      </option>
+                    ))}
                 </select>
               </div>
 
@@ -468,10 +484,14 @@ function App() {
                 <select
                   id="forecast-model-select"
                   value={forecastModel}
-                  onChange={(event) => setForecastModel(event.target.value as ForecastModelName)}
+                  onChange={(event) =>
+                    setForecastModel(event.target.value as ForecastModelName)
+                  }
                 >
                   {FORECAST_MODELS.map((m) => (
-                    <option key={m} value={m}>{m.replace("_", " ")}</option>
+                    <option key={m} value={m}>
+                      {m.replace("_", " ")}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -500,7 +520,7 @@ function App() {
                   <span>predicted complaints</span>
                 </div>
                 <div className="metric-grid">
-                  <div><span>Model</span><strong>{forecast.modelName.replace("_", " ")}</strong></div>
+                  <div><span>Model</span><strong data-testid="forecast-model-name">{forecast.modelName.replace("_", " ")}</strong></div>
                   <div><span>Validation MAE</span><strong>{forecast.mae.toFixed(2)}</strong></div>
                   <div><span>Validation RMSE</span><strong>{forecast.rmse.toFixed(2)}</strong></div>
                 </div>

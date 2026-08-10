@@ -20,10 +20,10 @@ Move the deployed 311 forecasting workflow toward a reliable public release. The
 
 - Work from the latest `main` branch.
 - Run `npm --prefix apps/web ci`, `npm --prefix apps/web test`, and `npm --prefix apps/web run build` before making changes.
-- The active frontend release is `20260729-022708`.
+- The active frontend release is `20260810-165551`.
 - Real forecasts use the `nycdata` Firestore database and local ONNX models.
 - The deployed featured-dataset request falls through to `http://localhost:8000` and loads the bundled mock dataset.
-- The Firestore release contains 300 valid ZIP and complaint-type records, but the live selector exposes only two ZIP codes.
+- The Firestore release contains 15,268 valid ZIP and complaint-type records across 16 complaint types, and the live selector exposes all valid combinations.
 - Do not commit `.env` files, credentials, downloaded production data, or generated build directories.
 
 ## Tasks For The Week

@@ -1,5 +1,9 @@
-import { getFeaturedDatasetFromFirestore } from "./firebase";
-import { MOCK_FEATURED_DATASET } from "./mockFeaturedDataset";
+import {
+  loadSelectorManifest,
+  type SelectorCombination,
+  type SelectorManifest,
+  type SelectorManifestResult,
+} from "./forecast/selectorManifest";
 
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL?.trim() || "http://localhost:8000";
@@ -55,6 +59,10 @@ export async function searchDatasets(query: string): Promise<DatasetSearchResult
   return payload.results;
 }
 
+/**
+ * @deprecated The forecast workspace no longer loads a "featured dataset" from
+ * the backend API. Use SelectorDataset and getSelectorDataset instead.
+ */
 export type FeaturedDataset = {
   dataset_id: string;
   title: string;
@@ -72,27 +80,84 @@ export type FeaturedDataset = {
   }[];
 };
 
-export async function getFeaturedDataset(): Promise<FeaturedDataset> {
-  const fromFirestore = await getFeaturedDatasetFromFirestore();
-  if (fromFirestore) {
-    return fromFirestore;
+export type SelectorDataset = {
+  release_id: string;
+  dataset_version: string;
+  embedding_version: string;
+  feature_schema_version: string;
+  source_years: number[];
+  target_year: number;
+  record_count: number;
+  combinations: SelectorCombination[];
+  generated_at: string;
+  is_mock: boolean;
+};
+
+function selectorDatasetFromManifest(
+  manifest: SelectorManifest,
+  isMock: boolean
+): SelectorDataset {
+  return {
+    release_id: manifest.release_id,
+    dataset_version: manifest.dataset_version,
+    embedding_version: manifest.embedding_version,
+    feature_schema_version: manifest.feature_schema_version,
+    source_years: manifest.source_years,
+    target_year: manifest.target_year,
+    record_count: manifest.record_count,
+    combinations: manifest.combinations,
+    generated_at: manifest.generated_at,
+    is_mock: isMock,
+  };
+}
+
+export type SelectorDatasetResult =
+  | { status: "ready"; dataset: SelectorDataset }
+  | { status: "empty" }
+  | { status: "unavailable"; reason: string };
+
+/**
+ * Load the selector dataset for the active forecast release.
+ *
+ * This function no longer falls back to the backend API at
+ * http://localhost:8000. It reads the selector manifest directly from
+ * Firestore (or a bundled dev manifest) so production never silently shows
+ * mock data as live data.
+ */
+export async function getSelectorDataset(): Promise<SelectorDatasetResult> {
+  const manifestResult: SelectorManifestResult = await loadSelectorManifest();
+
+  if (manifestResult.status === "live") {
+    return {
+      status: "ready",
+      dataset: selectorDatasetFromManifest(manifestResult.manifest, false),
+    };
   }
 
-  try {
-    const url = `${API_BASE_URL}/datasets/featured`;
-    const response = await fetch(url);
-    if (!response.ok) {
-      throw new Error(`Featured dataset failed with status ${response.status}`);
-    }
-    const payload = (await response.json()) as { featured: FeaturedDataset };
-    return payload.featured;
-  } catch (err) {
-    console.warn(
-      "[api] Failed to load featured dataset from API. Using mock dataset for local development:",
-      err
-    );
-    return MOCK_FEATURED_DATASET;
+  if (manifestResult.status === "mock") {
+    return {
+      status: "ready",
+      dataset: selectorDatasetFromManifest(manifestResult.manifest, true),
+    };
   }
+
+  if (manifestResult.status === "empty") {
+    return { status: "empty" };
+  }
+
+  return {
+    status: "unavailable",
+    reason: manifestResult.reason,
+  };
+}
+
+/**
+ * @deprecated Use getSelectorDataset instead.
+ */
+export async function getFeaturedDataset(): Promise<FeaturedDataset> {
+  throw new Error(
+    "getFeaturedDataset is deprecated. Use getSelectorDataset for the forecast workspace."
+  );
 }
 
 export async function publishRun(
