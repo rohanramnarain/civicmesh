@@ -18,13 +18,16 @@ from urllib.error import HTTPError
 
 ENV_PATH = Path(__file__).resolve().parents[1] / "apps" / "web" / ".env"
 PROJECT_ID = "civicgrid-e8b69"
-RELEASE_ID = "20260728-164958"
+RELEASE_ID = "20260810-165551"
 DATABASE_ID = "nycdata"
 
 SAMPLE_COMBINATIONS = [
     ("10000", "HEAT/HOT WATER"),
     ("10000", "Street Condition"),
-    ("10001", "HEAT/HOT WATER"),
+    ("10001", "Illegal Parking"),
+    ("10001", "Noise - Residential"),
+    ("10002", "Rodent"),
+    ("10003", "Graffiti"),
 ]
 
 

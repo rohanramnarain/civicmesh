@@ -17,7 +17,7 @@ The latest CivicGrid NYC web frontend is deployed at:
 
 **https://civicgrid-e8b69.web.app**
 
-It loads the active 311 forecast release (`20260729-022708`) from Firestore and runs
+It loads the active 311 forecast release (`20260810-165551`) from Firestore and runs
 model inference locally in the browser. No backend forecast API is used.
 
 ## 311 Forecast Setup & Deployment
@@ -27,7 +27,7 @@ model inference locally in the browser. No backend forecast API is used.
 - **Firebase URL:** https://civicgrid-e8b69.web.app
 - **Firebase project ID:** `civicgrid-e8b69`
 - **Firestore database ID:** `nycdata`
-- **Active forecast release:** `20260729-022708`
+- **Active forecast release:** `20260810-165551`
 - **Last verified:** 2026-07-31
 - **Deployment status:** Deployed and passing CI
 
@@ -83,7 +83,7 @@ paste credentials into README.md.
 
 - Release manifest: `forecast_releases/{release_id}/metadata/manifest`
 - Embedding records: `forecast_releases/{release_id}/embedding_records/{record_id}`
-- Active release in the frontend: `20260729-022708` (defined in
+- Active release in the frontend: `20260810-165551` (defined in
   `apps/web/src/forecast/releaseManifest.ts`)
 
 ### Real Firestore mode vs local mock mode

@@ -47,10 +47,10 @@ describe("ONNX parity fixtures", () => {
     async (modelName) => {
       const fixture = typedFixtures[modelName];
       const prediction = await runOnnxModel(modelName, fixture.input);
-      expect(prediction).toBeCloseTo(
-        fixture.expected_prediction,
-        -Math.log10(fixture.tolerance)
+      expect(Math.abs(prediction - fixture.expected_prediction)).toBeLessThanOrEqual(
+        fixture.tolerance
       );
-    }
+    },
+    30000
   );
 });

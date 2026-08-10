@@ -10,7 +10,7 @@ test.describe("311 forecast release flow", () => {
     await page.click("text=Load 311 Release");
 
     const status = page.locator("[data-testid='release-status']");
-    await expect(status).toContainText("20260729-022708");
+    await expect(status).toContainText("20260810-165551");
     await expect(page.locator("[data-testid='combination-count']")).toHaveText(
       "2 combinations"
     );

@@ -18,7 +18,7 @@ from urllib.error import HTTPError
 
 ENV_PATH = Path(__file__).resolve().parents[1] / "apps" / "web" / ".env"
 PROJECT_ID = "civicgrid-e8b69"
-RELEASE_ID = "20260729-022708"
+RELEASE_ID = "20260810-165551"
 DATABASE_ID = "nycdata"
 
 
